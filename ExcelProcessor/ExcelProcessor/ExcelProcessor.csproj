@@ -78,5 +78,15 @@
   <ItemGroup>
     <None Include="App.config" />
   </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\ExcelProcessor.Common\ExcelProcessor.Common.csproj">
+      <Project>{cdda6858-8f9f-468e-b653-2a5804c2dc6e}</Project>
+      <Name>ExcelProcessor.Common</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\ExcelProcessor.Logic\ExcelProcessor.Logic.csproj">
+      <Project>{9c1d88fb-c8ce-4f28-a871-6bc593552968}</Project>
+      <Name>ExcelProcessor.Logic</Name>
+    </ProjectReference>
+  </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>
