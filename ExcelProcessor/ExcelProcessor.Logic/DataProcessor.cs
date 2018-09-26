@@ -4,6 +4,8 @@ using NPOI.XSSF.UserModel;
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
+using System.Security.AccessControl;
 
 namespace ExcelProcessor.Logic
 {
@@ -25,8 +27,16 @@ namespace ExcelProcessor.Logic
                 {
                     excelWorkBook = new XSSFWorkbook(file);
                     organisationFileDataSheet = excelWorkBook.GetSheetAt(0);
+                    excelFileName = new FileInfo(filePath).Name;
                 }
             }
+        }
+
+        public static void SetAccessRule(string directory)
+        {
+            DirectorySecurity sec = System.IO.Directory.GetAccessControl(directory);
+            FileSystemAccessRule accRule = new FileSystemAccessRule(Environment.UserDomainName + "\\" + Environment.UserName, FileSystemRights.FullControl, AccessControlType.Allow);
+            sec.AddAccessRule(accRule);
         }
 
         public void ProceedFiles(object callback)
@@ -44,18 +54,24 @@ namespace ExcelProcessor.Logic
 
                     if (orgRow != null && !ExcelHelper.IsCellEmpty(orgRow.Cells[2]) && orgRow.RowNum > 0)
                     {
-                        try
+                        String orgCellData = ExcelHelper.GetCellData(orgRow.Cells[2]);
+                        foreach (WorkBookModel workBookModel in CountryFilesHolder.countryDocFiles)
                         {
-                            String orgCellData = ExcelHelper.GetCellData(orgRow.Cells[2]);
-                            foreach (WorkBookModel workBookModel in CountryFilesHolder.countryDocFiles)
+                            ISheet countryFileDataSheet = workBookModel.workBookFile.GetSheetAt(2);
+                            for (int countryRow = 1; row <= countryFileDataSheet.LastRowNum; countryRow++)
                             {
-                                ISheet countryFileDataSheet = workBookModel.workBookFile.GetSheetAt(2);
-                                for (int countryRow = 0; row <= countryFileDataSheet.LastRowNum; row++)
+                                IRow countryRowData = countryFileDataSheet.GetRow(countryRow);
+                                if (countryRowData != null)
                                 {
-                                    IRow countryRowData = countryFileDataSheet.GetRow(countryRow);
                                     if (ExcelHelper.GetCellData(countryRowData.Cells[0]).Contains(orgCellData) && countryRowData.RowNum > 0)
                                     {
-                                        dataFromBColumn = ExcelHelper.GetCellData(countryRowData.Cells[1]);
+                                        string resvalue = ExcelHelper.GetCellData(countryRowData.Cells[1]);
+                                        if (countryRowData.Cells[1].CellType == CellType.Formula)
+                                        {
+                                            var value = workBookModel.workBookFile.GetCreationHelper().CreateFormulaEvaluator().Evaluate(countryRowData.Cells[1]);
+                                            resvalue = value.StringValue;
+                                        }
+                                        dataFromBColumn = resvalue;
                                         nameOfOrganisation = ExcelHelper.GetCellData(countryRowData.Cells[0]);
                                         updateExcelFile(nameOfOrganisation, dataFromBColumn);
                                         rowsForDelete.Add(orgRow);
@@ -63,10 +79,6 @@ namespace ExcelProcessor.Logic
                                     }
                                 }
                             }
-                        }
-                        catch (Exception ex)
-                        {
-                            Console.WriteLine(ex.Message);
                         }
                     }
                 }
@@ -77,23 +89,18 @@ namespace ExcelProcessor.Logic
         {
             lock (CountryFilesHolder.locker)
             {
+                String countryName = excelFileName.Split(' ')[0];
                 if (namaOfOrganization != "" && dataFromBColumn != "")
                 {
-                    foreach (WorkBookModel workBookModel in CountryFilesHolder.countryDocFiles)
+                    var item = CountryFilesHolder.countryDocFiles.Where(x => x.fileInfo.Name.Contains(countryName)).FirstOrDefault();
+                    ISheet countryDocSheet = item.workBookFile.GetSheetAt(1);
+                    foreach (IRow row in countryDocSheet)
                     {
-                        String countryName = excelFileName.Split(' ')[0];
-                        if (workBookModel.fileInfo.Name.Contains(countryName))
+                        if (ExcelHelper.GetCellData(row.Cells[0]).Contains(namaOfOrganization) && row.RowNum > 0)
                         {
-                            ISheet countryDocSheet = workBookModel.workBookFile.GetSheetAt(1);
-                            foreach (IRow row in countryDocSheet)
-                            {
-                                if (ExcelHelper.GetCellData(row.Cells[0]).Contains(namaOfOrganization) && row.RowNum > 0)
-                                {
-                                    ICell cell = row.Cells[1];
-                                    cell.SetCellValue(dataFromBColumn);
-                                    return;
-                                }
-                            }
+                            ICell cell = row.Cells[1];
+                            cell.SetCellValue(dataFromBColumn);
+                            return;
                         }
                     }
                 }

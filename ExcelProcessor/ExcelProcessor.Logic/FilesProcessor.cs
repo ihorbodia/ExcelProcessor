@@ -28,12 +28,12 @@ namespace ExcelProcessor.Logic
             {
                 foreach (var countryDirectory in dirListing)
                 {
-                    var docFiles = countryDirectory.EnumerateFiles("doc.xlsx", SearchOption.TopDirectoryOnly);
+                    var docFiles = countryDirectory.EnumerateFiles().Where(s => s.Name.EndsWith("doc.xlsx"));
                     if (docFiles.Count() == 1)
                     {
                         try
                         {
-                            CountryFilesHolder.countryDocFiles.Add(new WorkBookModel(docFiles.FirstOrDefault().DirectoryName));
+                            CountryFilesHolder.countryDocFiles.Add(new WorkBookModel(docFiles.FirstOrDefault().FullName));
                             Console.WriteLine("INFO: Docfile initialized: " + docFiles.FirstOrDefault().Name);
                         }
                         catch (IOException ex)
@@ -69,7 +69,7 @@ namespace ExcelProcessor.Logic
                     {
                         ThreadPool.QueueUserWorkItem(new WaitCallback(x =>
                         {
-                            new DataProcessor(item.DirectoryName).ProceedFiles(x);
+                            new DataProcessor(item.FullName).ProceedFiles(x);
                             resetEvent.Set();
                         }));
                         resetEvent.WaitOne();
