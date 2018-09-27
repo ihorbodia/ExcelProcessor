@@ -1,18 +1,15 @@
 ﻿using ExcelProcessor.Common;
 using System;
-using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Threading;
-using System.Threading.Tasks;
 
 namespace ExcelProcessor.Logic
 {
     public class FilesProcessor
     {
         string chosenFolderPath;
-        string organizationFile;
         string errorMessage;
 
         public FilesProcessor(string chosenFolderPath)
@@ -80,9 +77,8 @@ namespace ExcelProcessor.Logic
                     errorMessage = "Something wrong with organisation shareholder file: " + item.Name;
                     Console.WriteLine("ERROR: Something wrong with organisation shareholder file: " + item.Name);
                 }
-                errorMessage = "Program interrupted";
-                Console.WriteLine("ERROR: Program interrupted");
             }
+            Console.WriteLine("INFO: Organisation shareholders files have been processed");
         }
     }
 }

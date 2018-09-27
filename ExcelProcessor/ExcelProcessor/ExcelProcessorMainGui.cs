@@ -27,11 +27,19 @@ namespace ExcelProcessor
         private void ProcessFilesButton_Click(object sender, System.EventArgs e)
         {
             StatusLabelText.Text = "Processing";
-            Thread t = new Thread(RunProgram);
-            t.Start();
-            t.Join();
-
-            Console.WriteLine("Ended");
+            try
+            {
+                Thread t = new Thread(RunProgram);
+                t.Start();
+                t.Join();
+            }
+            catch (Exception)
+            {
+                StatusLabelText.Text = "Something wrong";
+            }
+           
+            StatusLabelText.Text = "Finish";
+            Console.WriteLine("Finish");
         }
         private void RunProgram()
         {

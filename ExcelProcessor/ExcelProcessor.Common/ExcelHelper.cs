@@ -1,4 +1,5 @@
 ﻿using NPOI.SS.UserModel;
+using NPOI.XSSF.UserModel;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -35,6 +36,28 @@ namespace ExcelProcessor.Common
                 else if (cell.CellType == CellType.String)
                 {
                     return cell.StringCellValue.Trim();
+                }
+            }
+            return string.Empty;
+        }
+
+        public static string GetCellData(ICell cell, IWorkbook workbook)
+        {
+            if (cell != null)
+            {
+                if (cell.CellType == CellType.Numeric)
+                {
+                    return Convert.ToString((cell.NumericCellValue)).Trim();
+                }
+                else if (cell.CellType == CellType.String)
+                {
+                    return cell.StringCellValue.Trim();
+                }
+                else if (cell.CellType == CellType.Formula)
+                {
+                    IFormulaEvaluator evaluator = workbook.GetCreationHelper().CreateFormulaEvaluator();
+                    CellValue cellValue = evaluator.Evaluate(cell);
+                    return cellValue.FormatAsString();
                 }
             }
             return string.Empty;

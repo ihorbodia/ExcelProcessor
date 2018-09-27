@@ -13,6 +13,7 @@ namespace ExcelProcessor.Logic
     {
         ISheet organisationFileDataSheet;
         String excelFileName;
+        String excelFilePath;
         IWorkbook excelWorkBook;
 
         public DataProcessor(string filePath)
@@ -26,8 +27,10 @@ namespace ExcelProcessor.Logic
                 using (FileStream file = new FileStream(filePath, FileMode.Open, FileAccess.Read))
                 {
                     excelWorkBook = new XSSFWorkbook(file);
+                    excelWorkBook.MissingCellPolicy = MissingCellPolicy.CREATE_NULL_AS_BLANK;
                     organisationFileDataSheet = excelWorkBook.GetSheetAt(0);
                     excelFileName = new FileInfo(filePath).Name;
+                    excelFilePath = new FileInfo(filePath).FullName;
                 }
             }
         }
@@ -52,27 +55,21 @@ namespace ExcelProcessor.Logic
                 {
                     orgRow = organisationFileDataSheet.GetRow(row);
 
-                    if (orgRow != null && !ExcelHelper.IsCellEmpty(orgRow.Cells[2]) && orgRow.RowNum > 0)
+                    if (orgRow != null && !ExcelHelper.IsCellEmpty(orgRow.GetCell(2)) && orgRow.RowNum > 0)
                     {
-                        String orgCellData = ExcelHelper.GetCellData(orgRow.Cells[2]);
+                        String orgCellData = ExcelHelper.GetCellData(orgRow.GetCell(2));
                         foreach (WorkBookModel workBookModel in CountryFilesHolder.countryDocFiles)
                         {
                             ISheet countryFileDataSheet = workBookModel.workBookFile.GetSheetAt(2);
-                            for (int countryRow = 1; row <= countryFileDataSheet.LastRowNum; countryRow++)
+                            for (int countryRow = 1; countryRow <= countryFileDataSheet.LastRowNum; countryRow++)
                             {
                                 IRow countryRowData = countryFileDataSheet.GetRow(countryRow);
                                 if (countryRowData != null)
                                 {
-                                    if (ExcelHelper.GetCellData(countryRowData.Cells[0]).Contains(orgCellData) && countryRowData.RowNum > 0)
+                                    if (ExcelHelper.GetCellData(countryRowData.GetCell(0)).Contains(orgCellData) && countryRowData.RowNum > 0)
                                     {
-                                        string resvalue = ExcelHelper.GetCellData(countryRowData.Cells[1]);
-                                        if (countryRowData.Cells[1].CellType == CellType.Formula)
-                                        {
-                                            var value = workBookModel.workBookFile.GetCreationHelper().CreateFormulaEvaluator().Evaluate(countryRowData.Cells[1]);
-                                            resvalue = value.StringValue;
-                                        }
-                                        dataFromBColumn = resvalue;
-                                        nameOfOrganisation = ExcelHelper.GetCellData(countryRowData.Cells[0]);
+                                        dataFromBColumn = ExcelHelper.GetCellData(countryRowData.GetCell(1));
+                                        nameOfOrganisation = ExcelHelper.GetCellData(countryRowData.GetCell(0));
                                         updateExcelFile(nameOfOrganisation, dataFromBColumn);
                                         rowsForDelete.Add(orgRow);
                                         break;
@@ -83,22 +80,38 @@ namespace ExcelProcessor.Logic
                     }
                 }
             }
+
+            foreach (IRow rowToDelete in rowsForDelete)
+            {
+                var row = organisationFileDataSheet.GetRow(rowToDelete.RowNum);
+                if (row != null)
+                {
+                    organisationFileDataSheet.RemoveRow(row);
+                }
+            }
+
+            using (var saveFile = new FileStream(excelFilePath, FileMode.Create, FileAccess.ReadWrite))
+            {
+                excelWorkBook.Write(saveFile);
+                saveFile.Close();
+            }
+            Console.WriteLine("INFO: File have been processed: " + excelFileName);
         }
 
-        private void updateExcelFile(String namaOfOrganization, String dataFromBColumn)
+        private void updateExcelFile(String nameOfOrganization, String dataFromBColumn)
         {
             lock (CountryFilesHolder.locker)
             {
                 String countryName = excelFileName.Split(' ')[0];
-                if (namaOfOrganization != "" && dataFromBColumn != "")
+                if (nameOfOrganization != "" && dataFromBColumn != "")
                 {
                     var item = CountryFilesHolder.countryDocFiles.Where(x => x.fileInfo.Name.Contains(countryName)).FirstOrDefault();
                     ISheet countryDocSheet = item.workBookFile.GetSheetAt(1);
                     foreach (IRow row in countryDocSheet)
                     {
-                        if (ExcelHelper.GetCellData(row.Cells[0]).Contains(namaOfOrganization) && row.RowNum > 0)
+                        if (ExcelHelper.GetCellData(row.GetCell(0)).Contains(nameOfOrganization) && row.RowNum > 0)
                         {
-                            ICell cell = row.Cells[1];
+                            ICell cell = row.GetCell(1);
                             cell.SetCellValue(dataFromBColumn);
                             return;
                         }

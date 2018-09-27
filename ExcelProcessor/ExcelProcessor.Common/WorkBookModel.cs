@@ -11,6 +11,7 @@ namespace ExcelProcessor.Common
         public WorkBookModel(string excelFilePathPath)
         {
             workBookFile = new XSSFWorkbook(excelFilePathPath);
+            workBookFile.MissingCellPolicy = MissingCellPolicy.CREATE_NULL_AS_BLANK;
             fileInfo = new FileInfo(excelFilePathPath);
         }
     }
