@@ -62,7 +62,7 @@ namespace ExcelProcessor.Logic
                                     IRow countryRowData = countryFileDataSheet.GetRow(countryRow);
                                     if (countryRowData != null)
                                     {
-                                        if (ExcelHelper.GetCellData(countryRowData.GetCell(0)).Contains(orgCellData) && countryRowData.RowNum > 0)
+                                        if (ExcelHelper.GetCellData(countryRowData.GetCell(0)).Contains(orgCellData) && countryRowData.RowNum > 0 && !string.IsNullOrEmpty(ExcelHelper.GetCellData(countryRowData.GetCell(1))))
                                         {
                                             dataFromBColumn = ExcelHelper.GetCellData(countryRowData.GetCell(1));
                                             nameOfOrganisation = ExcelHelper.GetCellData(countryRowData.GetCell(0));

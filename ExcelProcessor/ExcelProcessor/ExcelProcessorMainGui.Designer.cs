@@ -103,7 +103,7 @@
             this.Controls.Add(this.ProcessFilesButton);
             this.Controls.Add(this.ChooseFirstFolderButton);
             this.Name = "ExcelProcessorMainGui";
-            this.Text = "Excel processor";
+            this.Text = "Excel processor v1.0";
             this.ResumeLayout(false);
             this.PerformLayout();
 
