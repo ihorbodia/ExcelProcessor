@@ -1,6 +1,7 @@
 ﻿using ExcelProcessor.Logic;
 using System;
 using System.Threading;
+using System.Threading.Tasks;
 using System.Windows.Forms;
 
 namespace ExcelProcessor
@@ -29,17 +30,21 @@ namespace ExcelProcessor
             StatusLabelText.Text = "Processing";
             try
             {
-                Thread t = new Thread(RunProgram);
-                t.Start();
-                t.Join();
+                new Task(() =>
+                {
+                    Thread t = new Thread(RunProgram);
+                    t.Start();
+                    t.Join();
+                    StatusLabelText.Text = "Finish";
+                    Console.WriteLine("Finish");
+                }).Start();
             }
             catch (Exception)
             {
                 StatusLabelText.Text = "Something wrong";
             }
            
-            StatusLabelText.Text = "Finish";
-            Console.WriteLine("Finish");
+            
         }
         private void RunProgram()
         {
