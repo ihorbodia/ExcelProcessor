@@ -7,12 +7,15 @@ namespace ExcelProcessor.Common
     public class WorkBookModel
     {
         public IWorkbook workBookFile;
-        public FileInfo fileInfo;
+        public string fileInfoPath;
+        public FileStream fileStream;
         public WorkBookModel(string excelFilePathPath)
         {
-            workBookFile = new XSSFWorkbook(excelFilePathPath);
+            FileInfo fp = new FileInfo(excelFilePathPath);
+            fileStream = new FileStream(excelFilePathPath, FileMode.Open, FileAccess.Read);
+            fileInfoPath = fp.FullName;
+            workBookFile = WorkbookFactory.Create(fileStream);
             workBookFile.MissingCellPolicy = MissingCellPolicy.CREATE_NULL_AS_BLANK;
-            fileInfo = new FileInfo(excelFilePathPath);
         }
     }
 }

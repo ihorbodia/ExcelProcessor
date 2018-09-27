@@ -80,5 +80,19 @@ namespace ExcelProcessor.Logic
             }
             Console.WriteLine("INFO: Organisation shareholders files have been processed");
         }
+
+        public void SaveCountryDocFiles()
+        {
+            foreach (WorkBookModel countryDocFile in CountryFilesHolder.countryDocFiles)
+            {
+                countryDocFile.fileStream.Close();
+                using (var saveFile = new FileStream(countryDocFile.fileInfoPath, FileMode.Create, FileAccess.Write))
+                {
+                    countryDocFile.workBookFile.Write(saveFile);
+                    saveFile.Close();
+                    countryDocFile.workBookFile.Close();
+                }
+            }
+        }
     }
 }

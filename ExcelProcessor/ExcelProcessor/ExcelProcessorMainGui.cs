@@ -3,6 +3,7 @@ using System;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Forms;
+using ExcelProcessor.Common;
 
 namespace ExcelProcessor
 {
@@ -35,7 +36,7 @@ namespace ExcelProcessor
                     Thread t = new Thread(RunProgram);
                     t.Start();
                     t.Join();
-                    StatusLabelText.Text = "Finish";
+                    StatusLabelText.BeginInvoke((MethodInvoker)delegate () { StatusLabelText.Text = "Finish"; });
                     Console.WriteLine("Finish");
                 }).Start();
             }
@@ -43,7 +44,6 @@ namespace ExcelProcessor
             {
                 StatusLabelText.Text = "Something wrong";
             }
-           
             
         }
         private void RunProgram()
@@ -52,6 +52,7 @@ namespace ExcelProcessor
             fp = new FilesProcessor(chosenPath);
             fp.InitCountryDocFiles();
             fp.Run();
+            fp.SaveCountryDocFiles();
         }
     }
 }

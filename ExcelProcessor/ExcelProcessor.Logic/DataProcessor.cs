@@ -24,22 +24,16 @@ namespace ExcelProcessor.Logic
             }
             else
             {
-                using (FileStream file = new FileStream(filePath, FileMode.Open, FileAccess.Read))
+                using (FileStream file = new FileStream(filePath, FileMode.Open, FileAccess.ReadWrite))
                 {
                     excelWorkBook = new XSSFWorkbook(file);
                     excelWorkBook.MissingCellPolicy = MissingCellPolicy.CREATE_NULL_AS_BLANK;
                     organisationFileDataSheet = excelWorkBook.GetSheetAt(0);
                     excelFileName = new FileInfo(filePath).Name;
                     excelFilePath = new FileInfo(filePath).FullName;
+                    file.Close();
                 }
             }
-        }
-
-        public static void SetAccessRule(string directory)
-        {
-            DirectorySecurity sec = System.IO.Directory.GetAccessControl(directory);
-            FileSystemAccessRule accRule = new FileSystemAccessRule(Environment.UserDomainName + "\\" + Environment.UserName, FileSystemRights.FullControl, AccessControlType.Allow);
-            sec.AddAccessRule(accRule);
         }
 
         public void ProceedFiles(object callback)
@@ -61,18 +55,21 @@ namespace ExcelProcessor.Logic
                         foreach (WorkBookModel workBookModel in CountryFilesHolder.countryDocFiles)
                         {
                             ISheet countryFileDataSheet = workBookModel.workBookFile.GetSheetAt(2);
-                            for (int countryRow = 1; countryRow <= countryFileDataSheet.LastRowNum; countryRow++)
+                            if (countryFileDataSheet != null)
                             {
-                                IRow countryRowData = countryFileDataSheet.GetRow(countryRow);
-                                if (countryRowData != null)
+                                for (int countryRow = 1; countryRow <= countryFileDataSheet.LastRowNum; countryRow++)
                                 {
-                                    if (ExcelHelper.GetCellData(countryRowData.GetCell(0)).Contains(orgCellData) && countryRowData.RowNum > 0)
+                                    IRow countryRowData = countryFileDataSheet.GetRow(countryRow);
+                                    if (countryRowData != null)
                                     {
-                                        dataFromBColumn = ExcelHelper.GetCellData(countryRowData.GetCell(1));
-                                        nameOfOrganisation = ExcelHelper.GetCellData(countryRowData.GetCell(0));
-                                        updateExcelFile(nameOfOrganisation, dataFromBColumn);
-                                        rowsForDelete.Add(orgRow);
-                                        break;
+                                        if (ExcelHelper.GetCellData(countryRowData.GetCell(0)).Contains(orgCellData) && countryRowData.RowNum > 0)
+                                        {
+                                            dataFromBColumn = ExcelHelper.GetCellData(countryRowData.GetCell(1));
+                                            nameOfOrganisation = ExcelHelper.GetCellData(countryRowData.GetCell(0));
+                                            updateCountryDocFile(nameOfOrganisation, dataFromBColumn);
+                                            rowsForDelete.Add(orgRow);
+                                            break;
+                                        }
                                     }
                                 }
                             }
@@ -90,30 +87,34 @@ namespace ExcelProcessor.Logic
                 }
             }
 
-            using (var saveFile = new FileStream(excelFilePath, FileMode.Create, FileAccess.ReadWrite))
+            using (var saveFile = new FileStream(excelFilePath, FileMode.Create, FileAccess.Write))
             {
                 excelWorkBook.Write(saveFile);
                 saveFile.Close();
+                excelWorkBook.Close();
             }
             Console.WriteLine("INFO: File have been processed: " + excelFileName);
         }
 
-        private void updateExcelFile(String nameOfOrganization, String dataFromBColumn)
+        private void updateCountryDocFile(String nameOfOrganization, String dataFromBColumn)
         {
             lock (CountryFilesHolder.locker)
             {
                 String countryName = excelFileName.Split(' ')[0];
                 if (nameOfOrganization != "" && dataFromBColumn != "")
                 {
-                    var item = CountryFilesHolder.countryDocFiles.Where(x => x.fileInfo.Name.Contains(countryName)).FirstOrDefault();
-                    ISheet countryDocSheet = item.workBookFile.GetSheetAt(1);
-                    foreach (IRow row in countryDocSheet)
+                    var countryDocFile = CountryFilesHolder.countryDocFiles.Where(x => x.fileInfoPath.Contains(countryName)).FirstOrDefault();
+                    if (countryDocFile != null)
                     {
-                        if (ExcelHelper.GetCellData(row.GetCell(0)).Contains(nameOfOrganization) && row.RowNum > 0)
+                        ISheet countryDocSheet = countryDocFile.workBookFile.GetSheetAt(1);
+                        foreach (IRow row in countryDocSheet)
                         {
-                            ICell cell = row.GetCell(1);
-                            cell.SetCellValue(dataFromBColumn);
-                            return;
+                            if (ExcelHelper.GetCellData(row.GetCell(0)).Contains(nameOfOrganization) && row.RowNum > 0)
+                            {
+                                ICell cell = row.GetCell(1);
+                                cell.SetCellValue(dataFromBColumn);
+                                break;
+                            }
                         }
                     }
                 }
