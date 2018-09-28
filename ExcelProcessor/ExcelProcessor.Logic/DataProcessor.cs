@@ -51,7 +51,7 @@ namespace ExcelProcessor.Logic
 
                     if (orgRow != null && !ExcelHelper.IsCellEmpty(orgRow.GetCell(2)) && orgRow.RowNum > 0)
                     {
-                        string orgCellData = ExcelHelper.GetCellData(orgRow.GetCell(2)).Trim();
+                        string orgCellData = ExcelHelper.GetCellData(orgRow.GetCell(2));
                         foreach (WorkBookModel workBookModel in CountryFilesHolder.countryDocFiles)
                         {
                             ISheet countryFileDataSheet = workBookModel.workBookFile.GetSheetAt(2);
@@ -62,14 +62,10 @@ namespace ExcelProcessor.Logic
                                     IRow countryRowData = countryFileDataSheet.GetRow(countryRow);
                                     if (countryRowData != null)
                                     {
-                                        string countryCompanyName = ExcelHelper.GetCellData(countryRowData.GetCell(0)).Trim();
-                                        string bColumnData = ExcelHelper.GetCellData(countryRowData.GetCell(1)).Trim();
-                                        if (!string.IsNullOrEmpty(countryCompanyName).Equals(orgCellData) && 
-                                            !string.IsNullOrEmpty(bColumnData) && 
-                                            countryRowData.RowNum > 0)
+                                        if (ExcelHelper.GetCellData(countryRowData.GetCell(0)).Equals(orgCellData) && countryRowData.RowNum > 0 && !string.IsNullOrEmpty(ExcelHelper.GetCellData(countryRowData.GetCell(1))))
                                         {
-                                            dataFromBColumn = bColumnData;
-                                            nameOfOrganisation = countryCompanyName;
+                                            dataFromBColumn = ExcelHelper.GetCellData(countryRowData.GetCell(1));
+                                            nameOfOrganisation = ExcelHelper.GetCellData(countryRowData.GetCell(0));
                                             updateCountryDocFile(nameOfOrganisation, dataFromBColumn);
                                             rowsForDelete.Add(orgRow);
                                             break;
