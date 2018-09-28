@@ -3,10 +3,10 @@ using System;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Forms;
-using ExcelProcessor.Common;
 
 namespace ExcelProcessor
 {
+    
 	public partial class ExcelProcessorMainGui : Form
 	{
         string chosenPath = string.Empty;
@@ -14,7 +14,9 @@ namespace ExcelProcessor
 		{
 			InitializeComponent();
 			StatusLabelText.Text = "Choose folder";
-		}
+            this.Text = "Excel processor: v1.1";
+            
+        }
 
         private void ChooseFirstFolderButton_Click(object sender, System.EventArgs e)
         {

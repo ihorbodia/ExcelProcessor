@@ -51,7 +51,7 @@ namespace ExcelProcessor.Logic
 
                     if (orgRow != null && !ExcelHelper.IsCellEmpty(orgRow.GetCell(2)) && orgRow.RowNum > 0)
                     {
-                        String orgCellData = ExcelHelper.GetCellData(orgRow.GetCell(2));
+                        string orgCellData = ExcelHelper.GetCellData(orgRow.GetCell(2)).Trim();
                         foreach (WorkBookModel workBookModel in CountryFilesHolder.countryDocFiles)
                         {
                             ISheet countryFileDataSheet = workBookModel.workBookFile.GetSheetAt(2);
@@ -62,10 +62,14 @@ namespace ExcelProcessor.Logic
                                     IRow countryRowData = countryFileDataSheet.GetRow(countryRow);
                                     if (countryRowData != null)
                                     {
-                                        if (ExcelHelper.GetCellData(countryRowData.GetCell(0)).Contains(orgCellData) && countryRowData.RowNum > 0 && !string.IsNullOrEmpty(ExcelHelper.GetCellData(countryRowData.GetCell(1))))
+                                        string countryCompanyName = ExcelHelper.GetCellData(countryRowData.GetCell(0)).Trim();
+                                        string bColumnData = ExcelHelper.GetCellData(countryRowData.GetCell(1)).Trim();
+                                        if (!string.IsNullOrEmpty(countryCompanyName).Equals(orgCellData) && 
+                                            !string.IsNullOrEmpty(bColumnData) && 
+                                            countryRowData.RowNum > 0)
                                         {
-                                            dataFromBColumn = ExcelHelper.GetCellData(countryRowData.GetCell(1));
-                                            nameOfOrganisation = ExcelHelper.GetCellData(countryRowData.GetCell(0));
+                                            dataFromBColumn = bColumnData;
+                                            nameOfOrganisation = countryCompanyName;
                                             updateCountryDocFile(nameOfOrganisation, dataFromBColumn);
                                             rowsForDelete.Add(orgRow);
                                             break;
@@ -96,25 +100,26 @@ namespace ExcelProcessor.Logic
             Console.WriteLine("INFO: File have been processed: " + excelFileName);
         }
 
-        private void updateCountryDocFile(String nameOfOrganization, String dataFromBColumn)
+        private void updateCountryDocFile(string nameOfOrganization, string dataFromBColumn)
         {
             lock (CountryFilesHolder.locker)
             {
                 String countryName = excelFileName.Split(' ')[0];
-                if (nameOfOrganization != "" && dataFromBColumn != "")
+                if (string.IsNullOrWhiteSpace(nameOfOrganization) && string.IsNullOrWhiteSpace(dataFromBColumn))
                 {
-                    var countryDocFile = CountryFilesHolder.countryDocFiles.Where(x => x.fileInfoPath.Contains(countryName)).FirstOrDefault();
-                    if (countryDocFile != null)
+                    return;
+                }
+                var countryDocFile = CountryFilesHolder.countryDocFiles.Where(x => x.fileInfoPath.Contains(countryName)).FirstOrDefault();
+                if (countryDocFile != null)
+                {
+                    ISheet countryDocSheet = countryDocFile.workBookFile.GetSheetAt(1);
+                    foreach (IRow row in countryDocSheet)
                     {
-                        ISheet countryDocSheet = countryDocFile.workBookFile.GetSheetAt(1);
-                        foreach (IRow row in countryDocSheet)
+                        if (ExcelHelper.GetCellData(row.GetCell(0)).Trim().Equals(nameOfOrganization.Trim()) && row.RowNum > 0)
                         {
-                            if (ExcelHelper.GetCellData(row.GetCell(0)).Contains(nameOfOrganization) && row.RowNum > 0)
-                            {
-                                ICell cell = row.GetCell(1);
-                                cell.SetCellValue(dataFromBColumn);
-                                break;
-                            }
+                            ICell cell = row.GetCell(1);
+                            cell.SetCellValue(dataFromBColumn);
+                            break;
                         }
                     }
                 }
